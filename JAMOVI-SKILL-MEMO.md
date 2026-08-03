@@ -193,6 +193,14 @@ relying on any of it.
   directory, not the exit status or the success line.
 - The docker install path (`jmc --install` into a running container) works
   reliably and is the better test bed; see `plink-importer/install.sh`.
+- **`jmc` writes `ui/<AnalysisName>.js`; the server serves `<analysisname>.js`.**
+  The client lowercases the analysis name (`optionspanel.ts:186`) and the server
+  appends `.js` to it (`server.py:426`), so on Linux any analysis whose name is
+  not all-lowercase 404s and **none of its view handlers ever run** — every
+  injected control vanishes while the panel still renders from the `.u.yaml`,
+  so it looks like the JS was never written. macOS hides this entirely. Copy
+  the file to a lowercase name after installing, as
+  `plink-importer/install.sh` does.
 - In `compilerMode: tame` the compiler **adds a control to `.u.yaml` for every
   option**, including hidden ones, and rewrites the file.
 - Modules are R packages, so `src/*.c` compiles and ships — jamovi even relinks

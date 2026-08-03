@@ -184,6 +184,18 @@ must always tick the box. Sensible when output is a by-product; wrong for an
 import analysis, where writing the data *is* the purpose — a user who loads a
 file and does not notice the checkbox sees nothing happen.
 
+**Serve the analysis UI under the name jmc writes it.** `jmc --install` writes
+`ui/<AnalysisName>.js` with the analysis's own capitalisation, but the client
+requests the name lowercased (`client/main/optionspanel.ts:186`) and the server
+appends `.js` to that lowercased name (`server.py:426`). On a case-insensitive
+filesystem — macOS, the usual development machine — the mismatch is invisible.
+On Linux it is a 404: the handlers never load, and every control the module
+injects silently disappears, while the panel still renders from the `.u.yaml`
+so it looks as though the code was never written. Any analysis whose name is
+not all-lowercase is affected, including jmv's own conventions (`snpStats`,
+`linReg`). Either have `jmc` write the lowercased name, or have the server fall
+back to the analysis's declared capitalisation.
+
 **A `deleteColumn` action for analyses.** `requestAction` supports only
 `'createColumn'` (`client/analysisui/main.ts:99`). A blank sheet carries three
 real placeholder columns A, B, C (`formatio/blank.py`) that an import cannot
