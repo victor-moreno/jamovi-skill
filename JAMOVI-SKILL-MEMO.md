@@ -33,6 +33,14 @@ Suggested shape:
 6. **Building and installing** — desktop, docker, and the install scripts that lie.
 7. **A checklist of traps**, each one line, for scanning before writing code.
 
+## Companion document
+
+`JAMOVI-UPSTREAM-REQUESTS.md` in this repo lists the same limits from the other
+direction — what to ask the jamovi developers to change, with the measured
+evidence and the diffs. Several of the traps below exist only because of
+library defaults nobody chose; if any of those requests land, the corresponding
+workaround in the skill can be dropped.
+
 ## Where the evidence already is
 
 Do not re-derive these; they are written up with file:line references:
