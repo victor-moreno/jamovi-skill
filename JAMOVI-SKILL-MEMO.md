@@ -67,6 +67,21 @@ relying on any of it.
   `SNPstats/R/snpStats.b.R:29-34`.
 - Because of the above, `tbl$rowCount` is always 0 in `.run()` if rows were added
   in `.run()` — so it cannot be used as a "already filled?" guard.
+- **`Table$addRow` is O(n²).** It recomputes
+  `.rowNames <- sapply(.rowKeys, toJSON)` on *every* call
+  (`jmvcore/R/table.R:371`). Measured **5.4 s for 500 rows**, and since rows
+  have to be created in `.init()`, that cost is paid on **every option click**.
+  SNPstats hit the same thing at 41 s for 2016 LD-pair rows
+  (`SNPstats/R/snpStats.b.R:153-157`, and it has a `docs/jmvcore-addrow-pr/`).
+  Workaround: write `.rowKeys` / `.rowCount` and the cells directly and hoist
+  the serialisation out of the loop — see `.addRows()` in
+  `plink-importer/R/snpImport.b.R`. Keep a fallback to `addRow` so a jmvcore
+  change degrades to slow rather than broken.
+- Only build rows for a table that is actually shown. A hidden table's rows cost
+  exactly as much as a visible one's.
+- **`.init()` and `.run()` share one analysis object** (a fresh one per click),
+  so expensive work belongs in a private cache computed once and read by both.
+  Doing it in each is a silent doubling.
 - **`clearWith` defaults to `'*'`** for Html elements (`jmvcore/R/html.R:40`),
   meaning "clear on *any* option change". An instructions panel with no explicit
   `clearWith` is wiped on every click.
@@ -175,6 +190,16 @@ relying on any of it.
 - Modules are R packages, so `src/*.c` compiles and ships — jamovi even relinks
   module `.so` files (`compilerr.js:330`). Rarely needed; vectorising R is
   usually the better answer.
+
+### R6 and jmvcore naming
+
+- **Do not name a private member `.data`.** jmvcore's `Analysis` base class keeps
+  the dataset in a private field of that name and assigns to it; an R6 method
+  binding blocks that with `cannot change value of locked binding for '.data'`.
+  The same risk applies to any base-class private name — check before choosing.
+- A `local({ ... })` closure does not survive R6's private-list construction the
+  way it does in a plain list; a memoising helper written that way fails with
+  `object 'f' not found`. Resolve the function inside the method instead.
 
 ### Odds and ends that cost time
 
