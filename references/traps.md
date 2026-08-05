@@ -20,6 +20,10 @@ jmvtools 28.3 / jmvcore 2.7.38.
 - [ ] Hidden tables cost exactly what visible ones cost; don't build rows for a table nobody sees.
 - [ ] Every element that must survive an unrelated click has an explicit `clearWith`.
 - [ ] Every option a `renderFun` reads is listed in that Image's `clearWith`.
+- [ ] Plot data lives in `image$state` (or `requiresData: true`), never in an R6 field — the image-save path never calls `.run()`.
+- [ ] Image state is set only when absent, or every plot re-renders on every click.
+- [ ] `ggtheme` is a **list** (theme + two palette scales): `ggtheme + theme(...)` is silently `NULL`, and adding the list replaces the plot's own scales.
+- [ ] `geom_text` colour does not follow the theme — take it from `calc_element("text", ...)`.
 - [ ] Run-phase notes are set with `init = FALSE`, and stale placeholder keys are re-declared in `.init()`.
 - [ ] Cached state stays well under **500 000 compressed bytes** (`jmvcore/R/results.R:223`).
 - [ ] `type: Notice` in `.r.yaml` **does not compile**; build `jmvcore::Notice$new()` and `results$insert()`.
@@ -29,6 +33,7 @@ jmvtools 28.3 / jmvcore 2.7.38.
 
 ## Data in and out
 
+- [ ] `weightsSupport` is declared, not inherited: the fallback is `none` with an `Output` option and `auto` without, and `auto` replicates rows so `nrow(self$data)` is the sum of the weights.
 - [ ] Convert types (`jmvcore::toNumeric`, `as.factor`) **before** `na.omit()`/`subset()` — they strip jamovi's attributes.
 - [ ] Output columns: `setRowNums(rownames(data))`, never `1:nrow(data)` — silently wrong under any filter.
 - [ ] Output columns that must **grow** the dataset: do not call `setRowNums` at all.

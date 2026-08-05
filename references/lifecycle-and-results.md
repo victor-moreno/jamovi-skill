@@ -148,6 +148,55 @@ will cross-read each other's cache. Create the environment in `initialize()`.
 
 ## Plots
 
+- **A render function may run when `.run()` has not.** The engine has a separate
+  SAVE path: `engine/engine/enginer.cpp` dispatches `perform() == 5` to
+  `.savePart` immediately after `.load`, and returns without calling `run`.
+  `.savePart` (`jmvcore/R/analysis.R:565`) just looks the element up and calls
+  `element$saveAs(path)`. So a render function that reads analysis instance
+  state — an R6 field populated in `.run` — draws **nothing** when the user
+  saves or exports that image. Read `image$state` (restored by
+  `ResultsElement$fromProtoBuf`, `results.R:264`) or declare
+  `requiresData: true` and read `self$data`; `.savePart` honours the latter
+  explicitly. This shipped in a real module and produced blank exported plots
+  that looked fine on screen.
+- Set state **only when it is absent** (`is.null(image$state)`). Touching an
+  image in `.run` re-renders it, so re-asserting state every run makes every
+  plot redraw on unrelated clicks.
+- **`ggtheme` is not a theme — it is a list**, built as
+  `c(theme, ggPalette(palette))` (`jmvcore/R/themes.R`): the ggplot2 theme plus
+  two `discrete_scale` objects carrying jamovi's palette. Two silent
+  consequences:
+  - `ggtheme + ggplot2::theme(...)` evaluates to **`NULL`**. A list has no `+`
+    method, ggplot2's is dispatched on the right operand, and you get nothing —
+    the plot renders with no theme, no error, and looks untouched.
+  - adding the whole list **replaces any scale the plot already declared**,
+    because it arrives after them. A continuous `scale_fill_gradientn` then
+    fails with *"Continuous value supplied to a discrete scale"*; a
+    `scale_colour_manual` is silently swapped for jamovi's palette, taking any
+    `labels =` legend relabelling with it.
+
+  Hand theme additions to the plot **inside a list** — `p + list(theme, ...)` is
+  supported and `NULL` elements are safe. If the plot has its own deliberate
+  scales, filter the theme element out of `ggtheme` and drop the palette scales:
+
+  ```r
+  theme_only <- function(ggtheme) {
+      if (is.null(ggtheme)) return(NULL)
+      if (inherits(ggtheme, 'theme')) return(ggtheme)
+      parts <- Filter(function(x) inherits(x, 'theme'), ggtheme)
+      if (length(parts) == 0L) NULL else parts[[1L]]
+  }
+  ```
+
+  If the plot has no scales of its own, adopt the whole list and get jamovi's
+  palette for free — which is what the docs assume when they say "add ggtheme
+  last".
+- `theme$fill` / `theme$color` are the palette as plain vectors, for when you
+  want jamovi's colours but your own scale.
+- **`geom_text` ignores the theme.** Its default colour is a hardcoded black, so
+  an annotation is black-on-dark under the dark theme however good `ggtheme` is.
+  Take the theme's own text colour:
+  `ggplot2::calc_element("text", theme_only(ggtheme))$colour`.
 - Sizing belongs in `.init()`. Setting `image$setSize()` only inside the render
   function sizes the image *after* jamovi created the device at the default
   400×300: the first render is upscaled, blurry and clipped, then jumps size on
