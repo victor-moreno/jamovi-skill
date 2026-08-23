@@ -27,11 +27,6 @@ references/testing.md                 headless calls, oracles, goldens, refresh
 references/docs-and-source-map.md     what the docs cover, where they are wrong,
                                       which source file answers what
 scripts/mirror-jamovi-docs.sh         local greppable copy of the jamovi docs
-
-JAMOVI-UPSTREAM-REQUESTS.md           the same limits as bug reports for the
-                                      jamovi developers, with diffs and numbers
-JAMOVI-SKILL-MEMO.md                  the original brief this skill was written
-                                      from (kept for provenance)
 ```
 
 ## Using it
