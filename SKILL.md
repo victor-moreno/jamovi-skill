@@ -11,8 +11,16 @@ you should follow it. This skill covers what it does not: behaviour that is
 file:line or measurement that proves it, so you can re-verify instead of trusting.
 
 **Verified against jamovi 28.1.0.0, jmvtools 28.3 (jamovi-compiler 0.3.5),
-jmvcore 2.7.38, on 2026-08-05.** Re-check anything load-bearing against the
-target version — `references/docs-and-source-map.md` says how.
+jmvcore 2.7.38, on 2026-08-05; the panel-JS route re-verified against jamovi
+28.2 on 2026-09-10.** Re-check anything load-bearing against the target version
+— `references/docs-and-source-map.md` says how.
+
+One claim in here has already been wrong (the lowercase-filename rule below),
+and it was wrong because it reasoned from a server route to a user-visible
+symptom without ever running the thing. **Both test beds are available on this
+machine — jamovi desktop in `/Applications` and a jamovi container under
+OrbStack — so when a claim is checkable, check it there before writing it
+down.** `references/build-install-ship.md` covers both.
 
 ## Before you write code
 
@@ -52,13 +60,33 @@ MyModule/
 
 **Name every file in `jamovi/` in lower case, whatever the analysis is called.**
 `name: snpImport` lives *inside* the yaml; the files are `snpimport.*`. The
-compiler names its output from the file basename (`index.js:411-419`) while the
-server only ever serves `ui/<analysis_name.lower()>.js`
-(`server/jamovi/server/server.py:426`, from `client/main/optionspanel.ts:186`).
-Get this wrong and on Linux the panel still renders from the `.u.yaml` while
-**every injected control silently vanishes** — the JS 404s and no handler runs.
-macOS hides the bug completely. jmv does the same (`name: contTables` ships as
+compiler derives **all** its output names from the file basename
+(`jamovi-compiler/index.js:412-419`) — the `.h.R`, the `.b.R` it will scaffold,
+the generated `require('./<basename>')`, and `ui/<basename>.js` — so a lowercase
+basename keeps every one of them agreeing with each other and with the name the
+server lowercases. jmv does the same (`name: contTables` ships as
 `conttables.js`).
+
+**It is a convention, not a live bug. Do not "fix" a module that breaks it,
+and do not report it as one.** An earlier version of this skill claimed
+camelCase filenames cost you every injected control on Linux, reasoning from
+`ui/<analysis_name.lower()>.js` in `server.py:426`. The 404 is real; the
+consequence was invented. On jamovi 28.x the compiled panel JS is **embedded in
+the module's `jamovi-full.yaml` as a `uijs:` field** and the client reads it
+from there:
+`modules.ts:448` (`_moduleDefn[name]`, for a module whose `_status` is `ok`) →
+`analyses.ts:86` (`this.uijs = defn.uijs`) → `optionspanel.ts:179`.
+That HTTP route has exactly two callers and both are dead code:
+`modules.ts:453` is guarded by `_status == 'legacy'`, a value **never assigned
+anywhere in the client**; and `optionspanel.ts:186` sits under its own comment
+`// shouldn't get here`. Measured on jamovi 28.2 in docker: a module shipping
+`ui/snpPGS.js` and `ui/snpStats.js` resolves neither under the lowercased name,
+and both panels work — browse button included.
+
+**The general lesson, which is what actually cost the wrong bug report: a
+server route that 404s is not a user-visible failure until you have found the
+client code that calls it.** Trace the consumer before you believe the symptom,
+and prefer one run in the container over any amount of reading.
 
 ## The eight rules that cost the most to learn
 

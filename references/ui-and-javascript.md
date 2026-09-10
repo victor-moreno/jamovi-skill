@@ -3,11 +3,12 @@
 ## The two files, and how they connect
 
 `jamovi/<analysis>.u.yaml` lays the panel out; `jamovi/js/<analysis>.js` gives it
-behaviour. **Both must be named after the analysis, in lower case** — the UI
-compiler emits `this.handlers = require('./<basename>')` into the generated
-`.src.js` from the *file* basename, and the server serves
-`ui/<analysisname.lower()>.js`. See SKILL.md for the failure mode (silent on
-macOS, total loss of controls on Linux).
+behaviour. **The two must share a basename**, because the UI compiler emits
+`this.handlers = require('./<basename>')` into the generated `.src.js` from the
+*file* basename — mismatch them and the handlers are not wired up at all.
+Lower case is the convention (and what jmv uses), but the case itself is not
+load-bearing: see SKILL.md for why the "camelCase breaks the panel on Linux"
+rule that used to live here was wrong.
 
 There is a second, different mechanism — `<name>.events.js` — which is loaded
 **only** when the `.u.yaml` declares an explicit `events:` block referencing
@@ -120,8 +121,12 @@ downstream will (`data-io.md`).
   click the blue bar at the top to move focus out of the iframe first.
 - Enable **Developer Mode** (app menu → three dots) for R stack traces in the
   results panel instead of a generic error.
-- A panel that renders but has no injected controls is almost always the
-  lowercase-filename bug, not your JS.
+- A panel that renders but has no injected controls is **not** the
+  lowercase-filename bug — that one is a myth, see SKILL.md. Look instead at a
+  basename mismatch between the `.u.yaml` and `js/<name>.js` (the generated
+  `require` then points at nothing), a throw while the panel is being built, or
+  a stray identifier. Only running the panel shows any of these; grepping the
+  file does not.
 
 ## Testing the panel
 

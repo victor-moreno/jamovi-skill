@@ -7,6 +7,8 @@ jmvtools 28.3 / jmvcore 2.7.38.
 ## Naming and layout
 
 - [ ] Files in `jamovi/` are **lower case**; the analysis name inside the yaml is not.
+      (Convention, for internal consistency — *not* the Linux panel bug this
+      file used to claim. See SKILL.md; camelCase ships fine on jamovi 28.x.)
 - [ ] `R/` is **flat** — `R CMD INSTALL` does not recurse into subdirectories, and it does not warn.
 - [ ] No private R6 member called `.data` (or any other jmvcore `Analysis` private name).
 - [ ] The module name has **no dot** in it, and is not generic ("Statistics") or "jamovi"-ish.

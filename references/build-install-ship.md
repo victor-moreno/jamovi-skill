@@ -68,16 +68,39 @@ so anything not bundled at build time is simply unavailable.
 
 Two beds, and the container is the better one:
 
-- **Desktop** — fastest loop, but the install can silently no-op (above), and a
-  case-insensitive filesystem hides the lowercase-js bug entirely.
+- **Desktop** — fastest loop, but the install can silently no-op (above), and
+  jamovi.app cannot be driven while it is already open: `jmvtools::install()`
+  then reports `SingletonLock` *and* a success line. The `.jmo` is still built,
+  so treat that case as "built, not installed" and carry on rather than
+  aborting — anything your script must do to the source tree (re-applying a
+  generated-file patch, say) has to happen **before** that early exit, or a
+  locked run leaves the tree broken.
 - **Docker** (`jamovi/jamovi:<series>`) — `jmc --install` into a running
-  container works reliably, is the only way to see Linux/case-sensitive
-  behaviour, and is how cloud behaviour gets tested. Bootstrap `jmc` and node in
-  the container once; they survive `docker restart` but not `compose down/up`.
+  container works reliably and is how Linux and cloud behaviour get tested.
+  Bootstrap `jmc` and node in the container once; they survive `docker restart`
+  but not `compose down/up`.
 
-Keep an install script that does both and **asserts the invariants** (file
-casing, the `.jmo` contents, the presence of the ui js under the lowercased
-name) rather than trusting the tool's output.
+Keep one install script that does both, taking `[desktop|docker|both]`, and
+have each target **skip cleanly** when its bed is unavailable so `both` still
+succeeds on a machine with only one.
+
+**Assert the invariants you actually depend on** — the `.jmo`'s contents, the
+version in the installed `jamovi.yaml`, a smoke-test analysis run — rather than
+trusting the tool's output. Do *not* assert "the ui js exists under the
+lowercased name": that was in this file for a while and it is not an invariant
+(SKILL.md).
+
+Two environment traps that have each burned an afternoon:
+
+- **A sandboxed shell may fail `docker` for a reason that has nothing to do
+  with docker.** If `~/.docker/config.json` is unreadable the CLI prints
+  `WARNING: Error loading config file … operation not permitted` and returns
+  nothing, so a `docker ps | grep <container>` check concludes the container is
+  not running. Point `DOCKER_CONFIG` at a writable directory and it works.
+  Confirm the bed is really absent before reporting a target as untestable.
+- **`core.fileMode = false`** in a repo makes git record no mode change, so
+  scripts commit as `100644` and arrive non-executable for everyone cloning.
+  Set it per file with `git update-index --chmod=+x`.
 
 ## `R CMD check`
 

@@ -65,7 +65,8 @@ series branches go stale.
 | import / Special Import | `server/jamovi/server/instance.py:1071-1200`, `instancemodel.py:495` |
 | file-format readers (closed registry) | `server/jamovi/server/formatio/__init__.py` |
 | what a module manifest may declare | `server/jamovi/server/modules/modules.py:448-563` |
-| the analysis ui js route (lowercasing) | `server/jamovi/server/server.py:426`, `client/main/optionspanel.ts:186` |
+| where the options panel actually gets its JS | `jamovi-full.yaml` `uijs:` → `client/main/modules.ts:448` → `analyses.ts:86` → `optionspanel.ts:179` |
+| the analysis ui js route (lowercasing) — **dead code on 28.x** | `server/jamovi/server/server.py:426`; callers `modules.ts:453` (`_status == 'legacy'`, never assigned) and `optionspanel.ts:186` (`// shouldn't get here`) |
 | message size limits | `server/jamovi/server/engine.py:181`, `clientconnection.py:181`, `engine/engine/coms.cpp` |
 | the wire format for results and options | `server/jamovi/server/jamovi.proto` |
 | the file-type list in the UI | `client/main/backstage.ts:150-166` |
