@@ -22,6 +22,7 @@ jmvtools 28.3 / jmvcore 2.7.38.
 - [ ] Hidden tables cost exactly what visible ones cost; don't build rows for a table nobody sees.
 - [ ] Every element that must survive an unrelated click has an explicit `clearWith`.
 - [ ] Row keys are compared strictly: `addRow(rowKey = 1)` followed by `setRow(rowKey = 1L)` fails with "rowKey '1' not found". Build both from the same `seq_len()` / integer values.
+- [ ] A results item must not be named like a jmvcore `ResultsElement`/`Group` member (`path`, `name`, `title`, `state`, `status`, `items`, `index`, `key`, `parent`, `root`, `options`, `visible`, …). `results$path` then returns your item, and jamovi fails when it serialises the results ("comparison (==) is possible only for atomic and list types"). Headless runs never serialise, so every other test passes.
 - [ ] Every option a `renderFun` reads is listed in that Image's `clearWith`.
 - [ ] Plot data lives in `image$state` (or `requiresData: true`), never in an R6 field — the image-save path never calls `.run()`.
 - [ ] Image state is set only when absent, or every plot re-renders on every click.
@@ -78,6 +79,7 @@ jmvtools 28.3 / jmvcore 2.7.38.
 - [ ] An analysis with a `Data` option and no variable options needs `data = data.frame()` headlessly.
 - [ ] `Output` options are not function parameters — enable them by poking private option state.
 - [ ] `asProtoBuf()` needs `jmvcore:::initProtoBuf()` first.
+- [ ] Serialise each analysis as jamovi does in the tests: build it with `<name>Class$new(options = <name>Options$new(...), data = df, datasetId = "d", analysisId = "1", revision = 1)`, call `init()` and `run()`, then `RProtoBuf::serialize(an$asProtoBuf(final = FALSE, includeState = TRUE), NULL)`. Calling `asProtoBuf()` on the results of a headless wrapper fails for unrelated reasons (no analysis context).
 - [ ] `Table$asDF` is an active binding, not a method.
 - [ ] testthat sources `helper-*.R` globally but shares nothing between test files.
 - [ ] Match an external oracle's printing precision before choosing a tolerance.
