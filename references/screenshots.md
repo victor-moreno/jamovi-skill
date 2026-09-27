@@ -126,7 +126,7 @@ Running the unchanged recipe in Spanish found two things no headless test sees:
 ## What the jmsequential run showed
 
 Capturing one window per worked example of a six-analysis module (jmsequential,
-`jamovi/jamovi:28.3`, 11 figures in about 4 minutes) found three module bugs no
+`jamovi/jamovi:28.3`, 11 figures) found three module bugs no
 test had seen (see `traps.md`: in-plot text sized for a 12 pt theme, a legend
 cut at both edges, Data Library descriptions overlapping) and these recipe
 points:
@@ -177,5 +177,5 @@ canvas, because jamovi's panes stop growing at about 1280 px.
   (checked: only the PNGs the pages reference are).
 - Full-window screenshots are dense at page width: add `.lightbox`
   (`{#fig-jamovi-x .lightbox}`, Quarto ≥ 1.4) so a click enlarges them.
-- Commit the PNGs (tens of KB each; a full window 100-200 KB) and the recipe; rerun it after UI changes and
+- Commit the PNGs (measured: 60 KB for a menu crop, 120-180 KB for a full window) and the recipe; rerun it after UI changes and
   before a release, when the panel may have moved.
