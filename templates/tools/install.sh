@@ -26,9 +26,13 @@ smoke_preamble() {
 
 # ── desktop ──────────────────────────────────────────────────────────────────
 install_desktop() {
-  local APP LOG MODDIR i
+  local APP LOG MODDIR OLD i
   APP="${JAMOVI_CURRENT_APP:-/Applications/jamovi.app}"
   [ -d "$APP" ] || { echo "!! desktop: $APP is not installed — skipping"; return 0; }
+
+  MODDIR="$HOME/Library/Application Support/jamovi/modules/$MODULE"
+  # the Built: stamp of any copy already installed; the new one must differ
+  OLD="$(grep '^Built:' "$MODDIR/R/$MODULE/DESCRIPTION" 2>/dev/null || true)"
 
   echo ">> desktop: building $MODULE $VERSION with $(Rscript -e 'cat(R.version.string)')"
   LOG="$(mktemp "$ROOT/.tmp/install.XXXXXX")"
@@ -50,11 +54,22 @@ install_desktop() {
   fi
   rm -f "$LOG"
 
-  MODDIR="$HOME/Library/Application Support/jamovi/modules/$MODULE"
-  # jamovi unpacks the module shortly after jmvtools reports success; wait for it
-  for i in $(seq 1 20); do [ -d "$MODDIR" ] && break; sleep 1; done
-  [ -d "$MODDIR" ] || { echo "!! desktop: $MODDIR does not exist; sideload $ARTIFACT by hand"; return 1; }
-  echo ">> desktop: installed at $MODDIR"
+  # jamovi unpacks the module shortly AFTER jmvtools reports success. Waiting for the
+  # directory is not enough when an older copy is installed: the smoke test would load
+  # the old copy (measured: a new analysis "is not an exported object"). Wait for a new
+  # Built: stamp instead.
+  local NEW=""
+  for i in $(seq 1 60); do
+    NEW="$(grep '^Built:' "$MODDIR/R/$MODULE/DESCRIPTION" 2>/dev/null || true)"
+    [ -n "$NEW" ] && [ "$NEW" != "$OLD" ] && break
+    sleep 1
+  done
+  if [ -z "$NEW" ] || [ "$NEW" = "$OLD" ]; then
+    echo "!! desktop: jamovi has not replaced the installed copy of $MODULE after 60 s;"
+    echo "!! restart jamovi or sideload $ARTIFACT by hand"
+    return 1
+  fi
+  echo ">> desktop: installed at $MODDIR (${NEW#Built: })"
 
   if [ -f "$SMOKE" ]; then
     echo ">> desktop: smoke test"
