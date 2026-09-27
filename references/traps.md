@@ -21,6 +21,7 @@ jmvtools 28.3 / jmvcore 2.7.38.
 - [ ] `addRow` in a loop is quadratic — pre-size in `.init()` and `setRow()` in `.run()`.
 - [ ] Hidden tables cost exactly what visible ones cost; don't build rows for a table nobody sees.
 - [ ] Every element that must survive an unrelated click has an explicit `clearWith`.
+- [ ] Row keys are compared strictly: `addRow(rowKey = 1)` followed by `setRow(rowKey = 1L)` fails with "rowKey '1' not found". Build both from the same `seq_len()` / integer values.
 - [ ] Every option a `renderFun` reads is listed in that Image's `clearWith`.
 - [ ] Plot data lives in `image$state` (or `requiresData: true`), never in an R6 field — the image-save path never calls `.run()`.
 - [ ] Image state is set only when absent, or every plot re-renders on every click.
@@ -55,6 +56,8 @@ jmvtools 28.3 / jmvcore 2.7.38.
 - [ ] Handler names are `{optionName}_{eventName}`; `view_loaded` fires once per panel type, not per analysis.
 - [ ] A `Supplier`/`VariableSupplier` with `populate: manual` **requires** an `updated` handler or jamovi errors.
 - [ ] The panel is tested by injecting and clicking it, not by grepping the source.
+- [ ] Two-column `cell:` layouts overflow the options panel (about 550 px): the right column is **cut off**, not wrapped. Controls in a `LayoutBox` align on its widest label, so a row is as wide as the widest label plus the widest control (a `ComboBox` is as wide as its longest option). Prefer one column with `Label` groups, and short labels and dropdown texts.
+- [ ] A `Variable` option cannot be combined with `&&` / `||` in `visible:` (`(dep && pathTable)` fails with "invalid 'x' type"); keep `visible: (dep)` or set the visibility in `.init()`.
 
 ## Build and ship
 
