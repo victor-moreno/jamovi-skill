@@ -133,6 +133,7 @@ and prefer one run in the container over any amount of reading.
 | `references/build-install-ship.md` | building, docker, dependencies, `R CMD check`, library submission |
 | `references/testing.md` | headless construction, enabling Output from R, oracle + golden layering |
 | `references/docs-and-source-map.md` | what dev.jamovi.org covers, where it is wrong, and which source file answers what |
+| `references/tutorial-site.md` | a Quarto tutorial for a module: examples from the module's own code, sandboxed Quarto, light/dark figures, references from DOIs |
 | `JAMOVI-UPSTREAM-REQUESTS.md` (repo root) | the same limits as bug reports, with diffs and measurements |
 
 ## Working style that paid off

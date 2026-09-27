@@ -26,7 +26,9 @@ references/build-install-ship.md      building, docker, deps, check, submission
 references/testing.md                 headless calls, oracles, goldens, refresh
 references/docs-and-source-map.md     what the docs cover, where they are wrong,
                                       which source file answers what
+references/tutorial-site.md           a Quarto tutorial site for a module
 scripts/mirror-jamovi-docs.sh         local greppable copy of the jamovi docs
+scripts/quarto-sandbox.sh             run Quarto where ~/Library is not writable
 ```
 
 ## Using it
