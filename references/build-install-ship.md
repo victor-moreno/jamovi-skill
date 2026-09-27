@@ -42,6 +42,42 @@ the build should have produced.
   export list entirely — so a module needs no exports at all, and adding them
   only obliges you to document an interface that may not be usable from R.
 
+## The tools/ template — every module starts with it
+
+`templates/tools/` holds the build, install and release scripts every module in
+this collection uses. Copy them in with
+
+    sh <skill>/scripts/add-tools.sh <repo-root>        # --force to refresh
+
+They need no editing. `_module.sh`, sourced by all of them, finds the module —
+the repository root, or the one subfolder holding `DESCRIPTION` and `jamovi/` —
+and reads `Package` and `Version` from `DESCRIPTION`. The only per-module file
+is `tools/smoke.R`, which the copier never overwrites.
+
+| script | does |
+|---|---|
+| `build-jmo.sh {current\|solid}` | `jmc --build --home <app> --jmo`, stamped from that app's `env.conf`, then `prepare-jmo.sh` |
+| `prepare-jmo.sh` | repacks one build into the x64 and arm64 artifacts in `dist/`; refuses a `.jmo` with native libraries |
+| `install.sh [desktop\|docker\|both]` | `jmvtools::install()` into jamovi.app and/or `jmc --install` into the container, then runs `tools/smoke.R` against the installed copy |
+| `release.sh [--prune]` | builds both series and publishes the four artifacts as one `v<version>` GitHub release |
+| `smoke.R` | the module's own check: call one analysis and `stop()` on a wrong answer |
+
+Verified on 2026-09-27 with jmsequential on the arm64 Mac:
+
+- `build-jmo.sh current` and `build-jmo.sh solid` wrote all four artifacts;
+- `install.sh docker` installed into jamovi 28.1 and passed the module's smoke test;
+- `install.sh desktop` detected the sandboxed-Electron failure and printed the sideload
+  path.
+
+`install.sh` already handles three traps described below:
+
+- the `SingletonLock` / sandboxed-Electron failure. The `.jmo` is built, so the
+  script says to sideload it rather than failing.
+- the unreadable `~/.docker/config.json`. The script uses a writable
+  `DOCKER_CONFIG` under `.tmp/`.
+- `--skip-deps`. It is the default; set `JMC_SKIP_DEPS=no` for a module whose
+  dependencies jamovi does not bundle.
+
 ## Dependencies
 
 jamovi resolves module dependencies from a **frozen CRAN snapshot**, taken at

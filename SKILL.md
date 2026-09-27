@@ -24,6 +24,9 @@ down.** `references/build-install-ship.md` covers both.
 
 ## Before you write code
 
+0. **New module? Start from the template:** `sh scripts/add-tools.sh <repo-root>`
+   copies `templates/tools/` (build, install, release, smoke test). See
+   `references/build-install-ship.md`.
 1. **Check whether the answer already exists.** Read `references/traps.md`
    (one-line checklist) end to end — it is 60 seconds and most of the expensive
    bugs below are on it.
@@ -130,7 +133,7 @@ and prefer one run in the container over any amount of reading.
 | `references/data-io.md` | output variables, the transport ceilings and their numbers, getting files in, Special Import |
 | `references/yaml-and-compiler.md` | verified type enums, per-file headers, `Notice`, generated files, compiler quirks |
 | `references/ui-and-javascript.md` | `.u.yaml`, `jus: '3.0'` handlers, the browse-button pattern, debugging the panel |
-| `references/build-install-ship.md` | building, docker, dependencies, `R CMD check`, library submission |
+| `references/build-install-ship.md` | the `tools/` template every module starts with; building, docker, dependencies, `R CMD check`, library submission |
 | `references/testing.md` | headless construction, enabling Output from R, oracle + golden layering |
 | `references/docs-and-source-map.md` | what dev.jamovi.org covers, where it is wrong, and which source file answers what |
 | `references/tutorial-site.md` | a Quarto tutorial for a module: examples from the module's own code, sandboxed Quarto, light/dark figures, references from DOIs |

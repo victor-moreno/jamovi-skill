@@ -29,6 +29,8 @@ references/docs-and-source-map.md     what the docs cover, where they are wrong,
 references/tutorial-site.md           a Quarto tutorial site for a module
 scripts/mirror-jamovi-docs.sh         local greppable copy of the jamovi docs
 scripts/quarto-sandbox.sh             run Quarto where ~/Library is not writable
+scripts/add-tools.sh                  copy templates/tools/ into a module
+templates/tools/                      build-jmo, prepare-jmo, install, release, smoke.R
 ```
 
 ## Using it
