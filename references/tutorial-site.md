@@ -84,6 +84,13 @@ that cannot write there, every render dies before doing anything:
       Caption text.
       :::
 
+## Screenshots of the panel
+
+Pictures of the real options panel are captured by a script from jamovi in
+Docker (`screenshots.md`), kept beside the tutorial in `screenshots/`, and
+embedded as plain Markdown images with a figure id. They need no light/dark
+renderings.
+
 ## References from DOIs
 
 1. Verify each DOI against `https://api.crossref.org/works?query.bibliographic=...`.

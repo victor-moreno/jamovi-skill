@@ -137,6 +137,7 @@ and prefer one run in the container over any amount of reading.
 | `references/testing.md` | headless construction, enabling Output from R, oracle + golden layering |
 | `references/docs-and-source-map.md` | what dev.jamovi.org covers, where it is wrong, and which source file answers what |
 | `references/tutorial-site.md` | a Quarto tutorial for a module: examples from the module's own code, sandboxed Quarto, light/dark figures, references from DOIs |
+| `references/screenshots.md` | screenshots and captioned videos of the real panel, scripted against jamovi in Docker (the jamovi-automation helpers): capture container, recipes, other languages, the traps they hit |
 | `JAMOVI-UPSTREAM-REQUESTS.md` (repo root) | the same limits as bug reports, with diffs and measurements |
 
 ## Working style that paid off

@@ -27,6 +27,8 @@ references/testing.md                 headless calls, oracles, goldens, refresh
 references/docs-and-source-map.md     what the docs cover, where they are wrong,
                                       which source file answers what
 references/tutorial-site.md           a Quarto tutorial site for a module
+references/screenshots.md             scripted screenshots and videos of jamovi
+                                      in Docker, for tutorials and UI checks
 scripts/mirror-jamovi-docs.sh         local greppable copy of the jamovi docs
 scripts/quarto-sandbox.sh             run Quarto where ~/Library is not writable
 scripts/add-tools.sh                  copy templates/tools/ into a module

@@ -39,6 +39,7 @@ jmvtools 28.3 / jmvcore 2.7.38.
 
 - [ ] `weightsSupport` is declared, not inherited: the fallback is `none` with an `Output` option and `auto` without, and `auto` replicates rows so `nrow(self$data)` is the sum of the weights.
 - [ ] Convert types (`jmvcore::toNumeric`, `as.factor`) **before** `na.omit()`/`subset()` — they strip jamovi's attributes.
+- [ ] An **ordinal** variable arrives as an **ordered factor** (`engine/readdf.cpp:263`), and `as.factor()` keeps it ordered, so `coxph`/`glm`/`lm` code it with polynomial contrasts (`.L`, `.Q`) instead of level-versus-reference: use `factor(x, ordered = FALSE)` before modelling. Headless tests with plain factors never see it.
 - [ ] Output columns: `setRowNums(rownames(data))`, never `1:nrow(data)` — silently wrong under any filter.
 - [ ] Output columns that must **grow** the dataset: do not call `setRowNums` at all.
 - [ ] Output columns carry integers (+levels) or doubles only; character vectors are auto-factored.
@@ -58,6 +59,8 @@ jmvtools 28.3 / jmvcore 2.7.38.
 - [ ] A `Supplier`/`VariableSupplier` with `populate: manual` **requires** an `updated` handler or jamovi errors.
 - [ ] The panel is tested by injecting and clicking it, not by grepping the source.
 - [ ] Two-column `cell:` layouts overflow the options panel (about 550 px): the right column is **cut off**, not wrapped. Controls in a `LayoutBox` align on its widest label, so a row is as wide as the widest label plus the widest control (a `ComboBox` is as wide as its longest option). Prefer one column with `Label` groups, and short labels and dropdown texts.
+- [ ] A `LevelSelector` label is never translated: `levelselector.ts:64-72` renders it without `translate()` (unlike `gridcombobox.ts`), whatever the module's catalog says.
+- [ ] The plain arrow of a Terms box with `transferAction: interactions` adds the selected variables **and** their product; ignore one-variable terms in R and point users to the arrow's menu → *Interaction* (`screenshots.md`).
 - [ ] A `Variable` option cannot be combined with `&&` / `||` in `visible:` (`(dep && pathTable)` fails with "invalid 'x' type"); keep `visible: (dep)` or set the visibility in `.init()`.
 
 ## Build and ship
@@ -81,5 +84,6 @@ jmvtools 28.3 / jmvcore 2.7.38.
 - [ ] `asProtoBuf()` needs `jmvcore:::initProtoBuf()` first.
 - [ ] Serialise each analysis as jamovi does in the tests: build it with `<name>Class$new(options = <name>Options$new(...), data = df, datasetId = "d", analysisId = "1", revision = 1)`, call `init()` and `run()`, then `RProtoBuf::serialize(an$asProtoBuf(final = FALSE, includeState = TRUE), NULL)`. Calling `asProtoBuf()` on the results of a headless wrapper fails for unrelated reasons (no analysis context).
 - [ ] `Table$asDF` is an active binding, not a method.
+- [ ] jamovi cloud autosaves an edited `.omv` over the file it was opened from when the browser disconnects: a scripted run (screenshots, UI tests) must open a fresh copy each time (`screenshots.md`).
 - [ ] testthat sources `helper-*.R` globally but shares nothing between test files.
 - [ ] Match an external oracle's printing precision before choosing a tolerance.
