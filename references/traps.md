@@ -60,6 +60,7 @@ jmvtools 28.3 / jmvcore 2.7.38.
 
 - [ ] `jmvtools::install()` prints errors on stdout and exits 0 — verify the installed directory.
 - [ ] A sandboxed install into `jamovi.app` prints `Module installed successfully` having done nothing.
+- [ ] jamovi swaps in a reinstalled module a moment *after* `jmvtools::install()` returns: test the installed copy only once its `DESCRIPTION` `Built:` stamp has changed, or you test the old one (`templates/tools/install.sh` waits for it).
 - [ ] `.h.R` / `00jmv.R` / `0000.yaml` are generated; regenerate in CI and fail on a dirty tree.
 - [ ] A `Level` option must not carry a `default`, and the generated formal then needs patching to `= NULL`.
 - [ ] `00refs.yaml` needs its top-level `refs:` key; without it references vanish and nothing looks wrong.
