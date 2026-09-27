@@ -123,6 +123,41 @@ Running the unchanged recipe in Spanish found two things no headless test sees:
   label ran past the right edge of the panel (see the overflow line in
   `traps.md`). Capture once in each language the module ships.
 
+## What the jmsequential run showed
+
+Capturing one window per worked example of a six-analysis module (jmsequential,
+`jamovi/jamovi:28.3`, 11 figures in about 4 minutes) found three module bugs no
+test had seen (see `traps.md`: in-plot text sized for a 12 pt theme, a legend
+cut at both edges, Data Library descriptions overlapping) and these recipe
+points:
+
+- **One fresh page per figure.** `connect()` on the root URL opens a new
+  instance, so each window shows only its own analysis; the results never need
+  scrolling past earlier ones.
+- **Scrolling the results to a heading.** The scroller is `jmv-resultspanel`;
+  `scrollIntoView()` on a heading in a results iframe scrolls it, but also
+  scrolls `body#main-window` by ~14 px, pushing the ribbon off the top. Reset
+  `document.body.scrollTop = 0` after it.
+- **Wide tables.** At 1440 px the results pane is about 825 px wide and a
+  13-column table is cut; the pane grows with the window as far as its content
+  needs, so give that figure a wider viewport (1700 px) instead of cropping.
+- **Default-first examples.** When a tutorial example uses the analysis'
+  defaults, the recipe is a few clicks and the page can say "the defaults are
+  the example". Data for an example that has none (a monitoring example given as
+  Z values) can be a small CSV next to the recipe, and a table in the page for
+  the reader to type.
+- **Data Library.** ☰ → Open → Data Library reopens the folder browsed last,
+  so check for a data set's title before double-clicking the module's folder.
+- **In a sandboxed session:** `uv run --project ../jamovi-automation` must
+  write that project's `.venv`, so run `../jamovi-automation/.venv/bin/python`
+  directly; `jamovi_container.sh` puts `DOCKER_CONFIG` in its own `.tmp` when
+  `~/.docker/config.json` is unreadable, so export one inside the module first;
+  and a VM that mounts only the current project needs `JAMOVI_DOCS_DIR` and
+  `JAMOVI_MODULES_DIR` inside it (the defaults, beside the tool, mount empty).
+- **Checking the rendered site** with headless Chromium from `file://`: the
+  pages' CDN scripts never load in the sandbox and block even
+  `domcontentloaded`; abort `^https?://` routes first.
+
 ## Videos
 
 `jamovi_record.py` records a context with a visible cursor and writes `.mp4`,
@@ -140,5 +175,7 @@ canvas, because jamovi's panes stop growing at about 1280 px.
   light/dark renderings (see `tutorial-site.md`).
 - A `.py` file in the tutorial folder is not rendered or copied into `_site`
   (checked: only the PNGs the pages reference are).
-- Commit the PNGs (tens of KB each) and the recipe; rerun it after UI changes and
+- Full-window screenshots are dense at page width: add `.lightbox`
+  (`{#fig-jamovi-x .lightbox}`, Quarto ≥ 1.4) so a click enlarges them.
+- Commit the PNGs (tens of KB each; a full window 100-200 KB) and the recipe; rerun it after UI changes and
   before a release, when the panel may have moved.

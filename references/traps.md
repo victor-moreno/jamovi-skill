@@ -28,6 +28,8 @@ jmvtools 28.3 / jmvcore 2.7.38.
 - [ ] Image state is set only when absent, or every plot re-renders on every click.
 - [ ] `ggtheme` is a **list** (theme + two palette scales): `ggtheme + theme(...)` is silently `NULL`, and adding the list replaces the plot's own scales.
 - [ ] `geom_text` colour does not follow the theme — take it from `calc_element("text", ...)`.
+- [ ] Nor does its **size**: jamovi's theme text is 16 pt (axis text 12.8), so `annotate("text", size = 3.5)` (about 10 pt) comes out at 60 % of the axis text. Size it from the theme: `rel * calc_element("text", theme)$size / ggplot2::.pt`.
+- [ ] A 550 px plot has no room for two legends side by side at 16 pt: the top legend overflows and is cut at both edges. Stack them (`legend.box = "vertical"`) or shorten the labels.
 - [ ] Run-phase notes are set with `init = FALSE`, and stale placeholder keys are re-declared in `.init()`.
 - [ ] Cached state stays well under **500 000 compressed bytes** (`jmvcore/R/results.R:223`).
 - [ ] `type: Notice` in `.r.yaml` **does not compile**; build `jmvcore::Notice$new()` and `results$insert()`.
@@ -49,6 +51,7 @@ jmvtools 28.3 / jmvcore 2.7.38.
 - [ ] Options cross a **1 MiB** hop and results a **4 MiB** hop; both drop silently. Enforce the limit in the browser.
 - [ ] `NA` in a nominal output column costs **10 bytes**, not 1 — budget for the missing rate.
 - [ ] Splitting a payload across several options buys nothing: the full options object is re-sent every time.
+- [ ] Data Library entries (`datasets:` in `0000.yaml`) have a fixed height: a description over about 150 characters (two lines) runs over the next entry.
 
 ## UI and JavaScript
 
