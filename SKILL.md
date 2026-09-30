@@ -26,8 +26,10 @@ down.** `references/build-install-ship.md` covers both.
 ## Before you write code
 
 0. **New module? Start from the template:** `sh scripts/add-tools.sh <repo-root>`
-   copies `templates/tools/` (build, install, release, smoke test). See
-   `references/build-install-ship.md`.
+   copies `templates/tools/` (build, install, release, smoke test). For a
+   Docker bed, run `bash scripts/docker-setup.sh <jamovi-src>` once; after
+   that, `tools/install.sh docker` needs nothing added to jamovi's image, and
+   installs survive `down`/`up`. See `references/build-install-ship.md`.
 1. **Check whether the answer already exists.** Read `references/traps.md`
    (one-line checklist) end to end — it is 60 seconds and most of the expensive
    bugs below are on it.

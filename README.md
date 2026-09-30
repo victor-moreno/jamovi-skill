@@ -35,6 +35,8 @@ references/screenshots.md             scripted screenshots and videos of jamovi
 scripts/mirror-jamovi-docs.sh         local greppable copy of the jamovi docs
 scripts/quarto-sandbox.sh             run Quarto where ~/Library is not writable
 scripts/add-tools.sh                  copy templates/tools/ into a module
+scripts/docker-setup.sh               jamovi-src for Docker: image tag + a volume
+                                      that keeps modules and settings
 templates/tools/                      build-jmo, prepare-jmo, install, release, smoke.R
 ```
 

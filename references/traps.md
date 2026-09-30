@@ -87,6 +87,10 @@ against the jamovi 28.4 source.
 - [ ] `NAMESPACE` is hand-maintained if any of it is; roxygen will delete what it did not write.
 - [ ] Dependencies resolve from a **frozen CRAN snapshot** — a package dropped from CRAN breaks the *build*, not just behaviour.
 - [ ] A `.jmo` is specific to OS + architecture + jamovi series; side-loading across machines usually fails.
+- [ ] Docker (jamovi ≥ 28.4): install with the host's `jmc --install <module> --home docker:<container>` (the template's `install.sh docker`), not `jmc` inside the image. It needs nothing in the image, but the Docker VM must see the module repo read-write.
+- [ ] Modules and settings (language) live in the container's `/root/.jamovi`. Without a volume there (`scripts/docker-setup.sh`), `down`/`up` loses them.
+- [ ] Upstream's `docker-compose.yaml` still tags the 28.4 image as `jamovi/jamovi:28.1`. Override the tag, or `build` mislabels it and `up` runs an old image.
+- [ ] Never override an existing `DOCKER_CONFIG`: it hides buildx, and the legacy builder then fails on `$BUILDPLATFORM`.
 
 ## Testing
 

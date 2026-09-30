@@ -79,7 +79,7 @@ is `tools/smoke.R`, which the copier never overwrites.
 |---|---|
 | `build-jmo.sh {current\|solid}` | `jmc --build --home <app> --jmo`, stamped from that app's `env.conf`, then `prepare-jmo.sh` |
 | `prepare-jmo.sh` | repacks one build into the x64 and arm64 artifacts in `dist/`; refuses a `.jmo` with native libraries |
-| `install.sh [desktop\|docker\|both]` | `jmvtools::install()` into jamovi.app and/or `jmc --install` into the container, then runs `tools/smoke.R` against the installed copy |
+| `install.sh [desktop\|docker\|both]` | `jmvtools::install()` into jamovi.app and/or jamovi's own docker route (`jmc --install <module> --home docker:<container>`, see below), then runs `tools/smoke.R` against the installed copy |
 | `release.sh [--prune]` | builds both series and publishes the four artifacts as one `v<version>` GitHub release |
 | `smoke.R` | the module's own check: call one analysis and `stop()` on a wrong answer |
 
@@ -132,10 +132,9 @@ Two beds, and the container is the better one:
   aborting — anything your script must do to the source tree (re-applying a
   generated-file patch, say) has to happen **before** that early exit, or a
   locked run leaves the tree broken.
-- **Docker** (`jamovi/jamovi:<series>`) — `jmc --install` into a running
-  container works reliably and is how Linux and cloud behaviour get tested.
-  Bootstrap `jmc` and node in the container once; they survive `docker restart`
-  but not `compose down/up`.
+- **Docker** (`jamovi/jamovi:<series>`) — how Linux and cloud behaviour get
+  tested. From jamovi 28.4, install through jamovi's own route, which needs
+  nothing added to the image (next section).
 
 Keep one install script that does both, taking `[desktop|docker|both]`, and
 have each target **skip cleanly** when its bed is unavailable so `both` still
@@ -158,6 +157,81 @@ Two environment traps that have each burned an afternoon:
 - **`core.fileMode = false`** in a repo makes git record no mode change, so
   scripts commit as `100644` and arrive non-executable for everyone cloning.
   Set it per file with `git update-index --chmod=+x`.
+
+## The Docker bed (jamovi ≥ 28.4)
+
+Verified on 2026-09-30 against an image built from exact upstream 28.4 (x86_64,
+2 CPUs, 2 GB). jmsequential installed and passed its smoke test, and SNPstats
+(compiled dependency haplo.stats) installed and passed its suite in the
+container.
+
+**Setup, once per jamovi-src checkout:** `bash <skill>/scripts/docker-setup.sh
+<jamovi-src>`. It writes a `docker-compose.override.yaml` and lists it in
+`.git/info/exclude`, so the checkout stays an exact upstream copy. It also
+installs the compiler's npm dependencies. The override does two things:
+
+- **Tags the image by the checkout's version.** At 28.4, upstream's
+  `docker-compose.yaml` still says `jamovi/jamovi:28.1`. So `build` would
+  overwrite and mislabel an older image, and `up` would start the old image
+  without building.
+- **Mounts a volume at `/root/.jamovi`.** jamovi keeps user-installed modules
+  (`$HOME/.jamovi/modules`, `server/jamovi/common/dirs.cpp`) and
+  `settings.json` (language and other settings, `session.py:87`) there. Without
+  the volume both live on the container's own filesystem: they survive
+  `docker restart` but not `down`/`up`. Verified: a module and a language
+  change both survived two `down`/`up` cycles. `down -v` deletes the volume.
+
+Then `docker-compose --profile main build jamovi`, `... up -d`.
+
+**Installing a module:** `bash tools/install.sh docker [container]`. It runs
+the host's jamovi-compiler as `node index.js --install <module> --home
+docker:<container>` (`jamovi-compiler/docker.js`), which:
+
+1. builds in a throwaway container off the running container's image, with the
+   module and the compiler mounted in;
+2. installs dependencies (not `--skip-deps`) from jamovi's Linux binary repo
+   (`repo.jamovi.org/cran-linux/<snapshot>/<arch>`, about 680 packages), then
+   from the Posit snapshot as *source*. The image has `gcc`, so compiled
+   packages build: haplo.stats took about 30 s;
+3. copies the `.jmo` in and writes `install: <path>` to the server's stdin. The
+   server extracts it into `$HOME/.jamovi/modules` and restarts its engines, so
+   no container restart is needed.
+
+What it needs:
+
+- node, the docker CLI and a jamovi-src checkout **at the image's version** on
+  the host. The template looks for `../jamovi-src`, `tools/jamovi-src`, or
+  `JMC_COMPILER`. `--home docker:` skips the version gate, so a mismatched
+  compiler is not caught.
+- the container started from upstream's compose (`stdin_open: true` and
+  `--stdin-slave`). The script checks `Config.OpenStdin`.
+- a Docker VM that sees the module repo **read-write**: the build container
+  writes the generated files, `build/R<ver>-<arch>-linux` (a dependency cache,
+  reused next time) and `.jmc-docker.jmo` back into it. OrbStack and Docker
+  Desktop share `/Users`. A sandbox VM that mounts only one project does not.
+- the install is asynchronous after the stdin handoff. Wait for a new
+  `build-time:` in the installed `jamovi.yaml` before testing it.
+
+Before 28.4 the only route was `jmc` inside the container. The image has
+neither `jmc` nor `npm` (only `nodejs`), so that meant bootstrapping them, or
+baking `jmc` and each module's dependencies into a custom image.
+
+Traps met setting this up:
+
+- **Don't override `DOCKER_CONFIG` if the environment already sets it.** The
+  CLI plugins, buildx included, live there. Without buildx, compose falls back
+  to the legacy builder, which leaves `$BUILDPLATFORM` empty, and the build
+  fails at `FROM --platform=$BUILDPLATFORM` with `failed to parse platform`.
+- **A 2 GB VM cannot run the server and a heavy test suite at once.** The
+  server with 4 engines takes about 670 MB, and SNPstats' payload tests were
+  OOM-killed (exit 137). Run such suites in a throwaway container from the same
+  image, with the same volume.
+- **Check which jamovi answers on a published port** (`curl .../version`). A
+  second Docker VM forwarding the same port (41337) answers instead of your
+  container, and a test aimed at the wrong jamovi "passes".
+- **Settings are written 5 s after the last change** (`FileSystemBackend`,
+  `flush_delay=5`), and compose stops the container after 0.1 s. A setting
+  changed just before `down` is lost.
 
 ## `R CMD check`
 
