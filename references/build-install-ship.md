@@ -23,6 +23,22 @@ Never trust the exit status or the success line. Verify by listing the installed
 module directory and checking its timestamp, or by asserting on a file you know
 the build should have produced.
 
+## jmvtools must match the installed jamovi
+
+`jmc` asks the app given to `--home` (or `/Applications/jamovi.app`) for its
+version before *any* command, `--prepare` included (`installer.js:check()`).
+From jmvtools 28.4, a jamovi between 28.0 and 28.3 is rejected with
+`jamovi 28.4 or newer is required`. 28.4 is when the File control was renamed,
+and a module compiled by one side does not work on the other. jamovi 2.x
+(solid) still passes. In practice:
+
+- updating jmvtools (repo.jamovi.org had 28.4 on 2026-09-30) stops every
+  build against a 28.3 `jamovi.app` until the app is updated too;
+- the `current` series of `build-jmo.sh` stamps whatever the app says, so
+  build only after the app update;
+- the docker image (`jamovi/jamovi:<series>`) carries its own matching `jmc`,
+  so `install.sh docker` is unaffected once the image is rebuilt.
+
 ## Things that fail silently at build time
 
 - **`R CMD INSTALL` does not recurse into `R/` subdirectories.** `R/vendored/x.R`

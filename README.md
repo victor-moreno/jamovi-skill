@@ -11,7 +11,9 @@ file:line or the measurement that proves it, so a future session can verify
 rather than trust.
 
 Verified against **jamovi 28.1.0.0, jmvtools 28.3 (jamovi-compiler 0.3.5),
-jmvcore 2.7.38**, on 2026-08-05.
+jmvcore 2.7.38**, on 2026-08-05. File input and output (the `File` option,
+`openExternal`, the jmvtools 28.4 version gate) were read from the jamovi 28.4
+source on 2026-09-30.
 
 ```
 SKILL.md                              entry point: the shape of a module,
@@ -19,9 +21,10 @@ SKILL.md                              entry point: the shape of a module,
 references/traps.md                   the whole checklist, one line each
 references/lifecycle-and-results.md   .init/.run, restore, tables, state, plots
 references/data-io.md                 output variables, transport ceilings,
-                                      getting files in, Special Import
+                                      File option, openExternal, Special Import
 references/yaml-and-compiler.md       verified type enums and compiler quirks
-references/ui-and-javascript.md       .u.yaml, jus 3.0 handlers, browse button
+references/ui-and-javascript.md       .u.yaml, jus 3.0 handlers, browse button,
+                                      styling the File control
 references/build-install-ship.md      building, docker, deps, check, submission
 references/testing.md                 headless calls, oracles, goldens, refresh
 references/docs-and-source-map.md     what the docs cover, where they are wrong,

@@ -80,7 +80,12 @@ that does have a value.
 
 ## The file-browse pattern
 
-The only way to get a file into an analysis (see `data-io.md` for why). Shape:
+From jamovi 28.3, prefer the native `File` option and its `File` control (it
+was `FileSelector` in 28.3). It needs no JavaScript and survives in the
+`.omv`: see `data-io.md`. The pattern below is for two cases: jamovi < 28.3,
+or a panel that must read the file's bytes before sending, e.g. to slice a
+multi-GB file down to what the analysis needs. The File control never
+exposes the bytes. Shape:
 
 1. A visible, **disabled** TextBox bound to a `filename` String option — a
    passive readout, not an input. Use the native `disabled` attribute rather than
@@ -114,6 +119,19 @@ what selecting bytes requires.
 
 Enforce the transport ceiling here, before sending, and tell the user; nothing
 downstream will (`data-io.md`).
+
+### Styling the native File control
+
+The File control renders a `Browse…` button and a list of picked files, one
+per line, each with a × to remove it. A handler can restyle it through its
+public `body`/`list` fields and the CSS classes `jmv-file-selector`,
+`-button`, `-list`, `-item`, `-name`, `-remove`, and `.unavailable` for a file
+that needs re-selecting (`client/analysisui/fileselector.ts`). These are
+internals, not an API; SNPstats' `jamovi/js/snpPGS.js` does it to put the
+file name beside the button. The control rebuilds its list on every value
+change, so inline styles on the items are lost. Instead, add a class to `body`
+on `view_loaded`/`view_updated` and style through injected CSS rules. Take
+colours from the theme, not literals.
 
 ## Debugging
 

@@ -12,8 +12,9 @@ file:line or measurement that proves it, so you can re-verify instead of trustin
 
 **Verified against jamovi 28.1.0.0, jmvtools 28.3 (jamovi-compiler 0.3.5),
 jmvcore 2.7.38, on 2026-08-05; the panel-JS route re-verified against jamovi
-28.2 on 2026-09-10.** Re-check anything load-bearing against the target version
-— `references/docs-and-source-map.md` says how.
+28.2 on 2026-09-10; file input/output (the File option, `openExternal`) read
+from the jamovi 28.4 source on 2026-09-30.** Re-check anything load-bearing
+against the target version — `references/docs-and-source-map.md` says how.
 
 One claim in here has already been wrong (the lowercase-filename rule below),
 and it was wrong because it reasoned from a server route to a user-visible
@@ -114,9 +115,13 @@ and prefer one run in the container over any amount of reading.
    error reaches R, the analysis just never returns — or worse, renders its
    tables from the last progressive send with the data columns missing, so it
    looks like it worked.
-6. **There is no File option and no file picker.** Files enter through injected
-   JavaScript that reads bytes in the browser into a hidden `String` option. A
-   path option is the wrong answer and will not survive review.
+6. **Files come in through the `File` option (jamovi ≥ 28.3), and never
+   through a path option.** The `.u.yaml` control is `File` in 28.4 but was
+   `FileSelector` in 28.3, so a `.jmo` built for one breaks its panel on the
+   other: set `minApp` to match. The panel JS never sees the file's bytes. Use
+   the older route (injected JS writing base64 into a hidden `String` option)
+   only when the panel must read the file before sending it. Files go *out*
+   through `action: openExternal` (≥ 28.4). See `references/data-io.md`.
 7. **An analysis cannot register a file format, delete a column, or write into
    an existing one.** It can only create output columns — which *can* grow the
    dataset's row count, and that is what makes importer-style analyses possible.
@@ -130,7 +135,7 @@ and prefer one run in the container over any amount of reading.
 |---|---|
 | `references/traps.md` | the whole checklist, one line each — read first |
 | `references/lifecycle-and-results.md` | `.init`/`.run`, restore, tables, notes, state, caching, plots and sizing |
-| `references/data-io.md` | output variables, the transport ceilings and their numbers, getting files in, Special Import |
+| `references/data-io.md` | output variables, the transport ceilings and their numbers, the File option, the browse-button fallback, `openExternal` file output, Special Import |
 | `references/yaml-and-compiler.md` | verified type enums, per-file headers, `Notice`, generated files, compiler quirks |
 | `references/ui-and-javascript.md` | `.u.yaml`, `jus: '3.0'` handlers, the browse-button pattern, debugging the panel |
 | `references/build-install-ship.md` | the `tools/` template every module starts with; building, docker, dependencies, `R CMD check`, library submission |

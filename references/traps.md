@@ -2,7 +2,8 @@
 
 One line each, grouped by when it bites. Everything here is expanded, with
 evidence, in the other reference files. Verified against jamovi 28.1 /
-jmvtools 28.3 / jmvcore 2.7.38.
+jmvtools 28.3 / jmvcore 2.7.38; the File / `openExternal` / version-gate items
+against the jamovi 28.4 source.
 
 ## Naming and layout
 
@@ -48,6 +49,12 @@ jmvtools 28.3 / jmvcore 2.7.38.
 - [ ] An `Output` option cannot default to ticked — design the UX (and a warning) around that.
 - [ ] Within one analysis, an output key you stop emitting **deletes** its column; deletion is only safe in a message that does nothing else.
 - [ ] An analysis cannot rename, delete or write into a pre-existing column, and cannot register a file format.
+- [ ] Files come in through a `File` option (jamovi ≥ 28.3), never a path `String`. Its `.u.yaml` control is `File` in 28.4 but was `FileSelector` in 28.3: a `.jmo` built for one breaks the panel on the other, so `minApp` must match the jmvtools you build with.
+- [ ] A `File` option gives the panel JS only `{id, filename}`, never the bytes. Client-side slicing still needs the browse-button pattern.
+- [ ] A `File` option copies the **whole** file into the session and into every saved `.omv`, capped at 100 MB per session on cloud. It is not for multi-GB inputs.
+- [ ] Don't require `jmvcore (>= 28.3)` for `OptionFile`: jamovi 28.3.0.0's bundled jmvcore has it but reports 2.7.38.
+- [ ] `action: openExternal` (≥ 28.4) needs a returned `filename`. The desktop opens only allowlisted extensions (not `.gz`), and the file is served once.
+- [ ] Guard an `Action`'s `perform()` so it runs once per click; SNPstats saw the option stay TRUE across later runs.
 - [ ] Options cross a **1 MiB** hop and results a **4 MiB** hop; both drop silently. Enforce the limit in the browser.
 - [ ] `NA` in a nominal output column costs **10 bytes**, not 1 — budget for the missing rate.
 - [ ] Splitting a payload across several options buys nothing: the full options object is re-sent every time.
@@ -75,6 +82,7 @@ jmvtools 28.3 / jmvcore 2.7.38.
 - [ ] A `Level` option must not carry a `default`, and the generated formal then needs patching to `= NULL`.
 - [ ] `00refs.yaml` needs its top-level `refs:` key; without it references vanish and nothing looks wrong.
 - [ ] `usesNative` and `minApp` are filled in by `prepare()` when absent — with values you probably don't want.
+- [ ] jmc/jmvtools 28.4 refuses any jamovi 28.0–28.3 (`installer.js:104`), even for `--prepare`/`prepare()`. It still accepts 2.x (solid). Update the app before, or together with, jmvtools.
 - [ ] `.gitignore` and `.Rbuildignore` are independent lists; a working directory in one still ships via the other.
 - [ ] `NAMESPACE` is hand-maintained if any of it is; roxygen will delete what it did not write.
 - [ ] Dependencies resolve from a **frozen CRAN snapshot** — a package dropped from CRAN breaks the *build*, not just behaviour.

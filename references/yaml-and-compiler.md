@@ -15,7 +15,10 @@ $(Rscript -e 'cat(system.file("", package="jmvtools"))')/node_modules/jamovi-com
 ```
 
 Everything below is read from those files at jamovi-compiler 0.3.5 (jmvtools
-28.3) and, where noted, confirmed by compiling a throwaway module.
+28.3) and, where noted, confirmed by compiling a throwaway module. The `File`
+option, the `File` control and `action: openExternal` were read from the
+jamovi 28.4 source (the compiler still reports 0.3.5 there), and SNPstats was
+compiled with that compiler.
 
 ## `.a.yaml` — options
 
@@ -36,11 +39,27 @@ menu), `arbitraryCode`, `completeWhenFilled`, `export`, `pause`, `formula`.
 
 `analysisschema.yaml` enum: **Data, Level, Variable, Variables, Terms, Integer,
 Number, String, Bool, List, NMXList, Array, Pairs, Sort, Output, Outputs, Pair,
-Group, Action**.
+Group, Action**, plus **File** from jamovi 28.3 (`analysisschema.yaml:125` at
+28.4).
 
 The docs list eleven of these. `String`, `NMXList`, `Level`, `Pairs`, `Pair`,
-`Sort`, `Array`, `Outputs` are real and undocumented. There is **no File type**
-— see `data-io.md` for how files actually get in.
+`Sort`, `Array`, `Outputs` are real and undocumented. `File` is new and only
+described in the source. Before 28.3 there was no File type. `data-io.md`
+covers both routes for getting files in.
+
+### `File` and `Action` — the file options
+
+- `type: File` takes `multiple` and `extensions` (`optionschemas.yaml:175`), and
+  there is no `default`. Its `.u.yaml` control is **`type: File` from 28.4**;
+  in 28.3 it was `type: FileSelector` (renamed upstream in ac3126b1). 28.4's
+  compiler crashes on the old name with
+  `Cannot read properties of undefined (reading 'isOptionControl')`, which
+  names neither the file nor the control. `grep -rn FileSelector jamovi/` is
+  the quickest diagnosis.
+- `type: Action` takes `action: open` (open a data set in a new window) or,
+  from 28.4, `action: openExternal` (open/download a file the analysis wrote)
+  (`optionschemas.yaml:167`). Its control is `ActionButton`. See `data-io.md`
+  for the R side of both.
 
 `Output` and `Outputs` are special-cased by the compiler (`compiler.js:220`):
 they take no value and no properties beyond name/title, which is why an `Output`
@@ -130,7 +149,9 @@ hand-written module metadata. Two fields are filled in when absent
 (`jamovi-compiler/index.js:296-300`) with values you may not want:
 
 - `usesNative: true` — wrong if the module has no `src/`;
-- `minApp: 1.0.8` — wrong if you depend on behaviour introduced later.
+- `minApp: 1.0.8` — wrong if you depend on behaviour introduced later: a
+  `File` option built with jmvtools 28.4 needs `28.4.0`, and so does
+  `openExternal`.
 
 Set both explicitly. Any comment you write next to them does not survive a
 `prepare()`, so the reasoning belongs in the project's notes.

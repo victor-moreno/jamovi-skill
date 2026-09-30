@@ -71,8 +71,9 @@ if (self$options$residsOV && self$results$residsOV$isNotFilled()) {
 
 - **It cannot rename, delete or write into a column the user already has.**
   Outputs are always created fresh and renamed away from collisions
-  (`instance.py:316-372`). The only action an analysis UI can request is
-  `createColumn` (`client/analysisui/main.ts:99`).
+  (`instance.py:316-372`). The only actions an analysis UI can request are
+  `createColumn` and, from 28.3, `selectFiles` (the File control's picker)
+  (`client/analysisui/main.ts:99`).
 - A blank sheet has **three real columns** A, B, C (`formatio/blank.py`), not
   rendering artefacts, and a module cannot remove them.
 - **An `Output` option cannot default to ticked.** `OptionOutput` takes no
@@ -115,7 +116,13 @@ if (self$options$residsOV && self$results$residsOV$isNotFilled()) {
 | browser → server (websocket) | analysis options | 4 MiB | aiohttp default, `clientconnection.py:181` |
 | server → engine (nanomsg) | analysis options | **1 MiB** | nanomsg default, `NN_RCVMAXSIZE` never set in `engine/engine/coms.cpp` |
 | engine → server (nanomsg) | results, incl. output columns | 4 MiB | `engine.py:181` |
-| browser → server (HTTP POST) | file open in server mode | **1 MiB** | aiohttp `client_max_size` default, never raised |
+| browser → server (HTTP POST) | file open in server mode | **1 MiB** (measured on 28.1) | aiohttp `client_max_size` default, never raised |
+
+The last row is probably gone from 28.3 on, but it has not been re-measured.
+The data-open POST and the new File-option upload both stream to disk through
+`uploads.py:read_upload_form()`, which bypasses `client_max_size` (upstream
+e83a9bce). File-option uploads have their own cap: 100 MB per session on cloud,
+unlimited on desktop (see below).
 
 **Every one of them fails silently.** The message is dropped, nothing is logged,
 no error reaches the client, R is never told. The results ceiling is worse than
@@ -144,20 +151,90 @@ Consequences for design:
   nothing. Separate *analyses* each get their own budget.
 - Enforce the limit in the browser, before sending, and tell the user. Nothing
   downstream will.
-- The 4 MiB websocket is the **widest browser → server channel jamovi has** —
-  wider than the file-upload endpoint. Base64-in-an-option is not a workaround
-  for something better; it is the best channel available.
+- Up to jamovi 28.2, the 4 MiB websocket was the **widest browser → server
+  channel an analysis had**, and base64 in an option was the best route.
+  From 28.3 the File option (below) uploads out of band, so large files should
+  go through it.
 
 ## Getting files into an analysis
 
-**There is no File option type and no file-picker control.** The option types
-are `Data, Variables, Level, Variable, Bool, Action, Integer, Number, String,
-List, NMXList, Array, Pairs, Terms, Group, Sort` (plus `Output`, handled
-specially by the compiler) — verified from
-`jamovi-compiler/schemas/optionschemas.yaml`; `uictrlschemas.yaml` has no file
-control.
+**From jamovi 28.3, use the native `File` option.** Before 28.3 there was no
+file option and no picker, and the only route was the browse-button pattern
+further down. Keep that pattern for one case only: the panel JS must read the
+bytes itself, e.g. to slice a large file before anything is sent.
 
-The working pattern:
+### The File option (jamovi ≥ 28.3)
+
+Read from jamovi-src at 28.4 (107d4000). Pick → save `.omv` → quit →
+reopen was verified end to end on 28.3.0.0 with a toy module, and SNPstats
+has used this option since 1.2.0.
+
+```yaml
+# .a.yaml
+- name: weightsFile
+  title: Weights file
+  type: File
+  extensions: [csv, tsv, txt, gz]   # filters the dialog; optional
+  # multiple: true                  # a list of files instead of one
+```
+```yaml
+# .u.yaml — the control is `File` from 28.4 (it was `FileSelector` in 28.3)
+- type: File
+  name: weightsFile
+  label: 'Weights file:'
+```
+```r
+# .b.R
+f <- self$options$weightsFile     # NULL, or list(path =, filename =)
+if (!is.null(f)) lines <- readLines(f$path)   # f$filename = the user's name for it
+# multiple: true -> a list of list(path =, filename =), list() when empty
+```
+
+- **Allowed properties:** `name`, `title`, `hidden`, `multiple`,
+  `extensions`, `description` (`optionschemas.yaml:175`). There is no
+  `default`.
+- **The 28.3 → 28.4 control rename breaks built modules in both
+  directions.** 28.4's compiler crashes on `type: FileSelector` with
+  `Cannot read properties of undefined (reading 'isOptionControl')`. A `.jmo`
+  built for 28.3 carries `DefaultControls.FileSelector`, which is undefined in
+  28.4, so building its panel throws at `optionsview.ts:404`. No single
+  `.jmo` works on both. Built with jmvtools 28.4, a module with a File option
+  needs `minApp: 28.4.0`.
+- **What happens on Browse…** The control (`client/analysisui/fileselector.ts`)
+  asks the main window to `selectFiles` (`client/main/optionspanel.ts:284`).
+  The main window opens the native dialog (desktop) or a browser file input,
+  then uploads the file into the session temp dir, named by sha-256 plus
+  extension (`sessionfiles.py`). The option value on the wire is
+  `[{id, filename}]`, always an array. jmvcore's `OptionFile`
+  (`jmvcore/R/options.R:971`) resolves the id to a real path in the session
+  temp, so R sees `list(path, filename)`.
+- **The panel JS never sees the bytes.** It gets only `{id, filename}`. If the
+  panel has to read the file before sending, use the browse-button pattern.
+- **Desktop copies the whole file** into the session (`add_path`,
+  `server.py:310-365`), and only where `perms.open.local` allows it. Cloud
+  uploads the whole file. Neither can fetch only part of a file.
+- **Storage cap:** `perms.files.maxStorage` is 100 MB per session on cloud
+  and unlimited on desktop (`permissions.py:55-58`). Over the cap, the upload
+  fails with HTTP 413 and "This session is limited to N MB of files".
+- **The `.omv` carries the file.** `omv.py:225-247` writes each file once as
+  `NN analysis/files/<id>`. A template keeps none, and neither does an
+  analysis without results. On open, the hash is verified, and any id not
+  present is dropped (`analyses.py:140`). The control then shows the entry
+  greyed ("This file needs to be re-selected"), and `.check` rejects the run
+  with the same message. So a multi-GB input makes a multi-GB `.omv`.
+- **It is not a path option.** The id is checked against
+  `^[0-9a-f]{64}(\.ext)?$` and joined only to the session temp dir, so an
+  edited `.omv` cannot point R at an arbitrary file. The "no path options"
+  rule below still holds for `String` options.
+- **From R** (headless tests, scripts), a plain path string is accepted:
+  `myAnalysis(data, weightsFile = "w.csv")`.
+- **jmvcore versions:** CRAN's jmvcore 2.7.38 has no `OptionFile`, and 28.3
+  (on CRAN 2026-09-24) does. jamovi 28.3.0.0 bundles a jmvcore that *has*
+  `OptionFile` but reports `Version: 2.7.38`. So do **not** write
+  `jmvcore (>= 28.3)` in `DESCRIPTION`: the module would refuse to load in
+  that app. Tests need a jmvcore that exports `OptionFile`.
+
+### The browse-button pattern (panel reads the bytes; any jamovi)
 
 1. `.u.yaml` with `jus: '3.0'` and a `jamovi/js/<analysis>.js` handler.
 2. The handler injects an `<input type="file">`, reads bytes with `FileReader` /
@@ -190,6 +267,58 @@ Rules learned the hard way:
 - Validate everything in R even though the browser already did. The browser is
   an untrusted client of your own analysis: an `.omv` can be edited.
 
+## Getting files out: the `openExternal` action (jamovi ≥ 28.4)
+
+An `Action` option (a button) has two modes (`optionschemas.yaml:167`).
+`action: open` opens a data set the analysis produced in a new window.
+`action: openExternal` hands a file the analysis wrote to the host: the
+desktop app opens it in the application the OS associates with it, and a
+browser downloads it. Upstream 02aeb485; the R side is in CRAN jmvcore 28.3,
+but jamovi 28.3.0.0 has neither the client side nor the server route.
+
+```yaml
+# .a.yaml                               # .u.yaml
+- name: exportCsv                       - type: ActionButton
+  title: Export results (CSV)             name: exportCsv
+  type: Action
+  action: openExternal
+```
+```r
+# .b.R, in .run(), once the results exist
+if (isTRUE(self$options$exportCsv)) {
+  self$options$option("exportCsv")$perform(function(action) {
+    utils::write.csv(df, action$params$fullPath, row.names = FALSE)
+    list(filename = "results.csv")      # the name the user sees; required
+  })
+}
+```
+
+- **The contract** (`jmvcore/R/options.R:452-494`, `.normaliseExternal`):
+  write to `action$params$fullPath`, or write anywhere and return
+  `path = <file>`. Return a list with a non-empty `filename`, and optionally
+  `title`. jmvcore moves the file into `<session temp>/external/` under the
+  filename's extension. A missing file or filename becomes an error
+  notification ("Unable to open …"), not an R error.
+- **Serving** (`server.py:513`, `download_temp`) is **one-shot**: the file is
+  deleted once fetched, so it doesn't count against the storage cap. It is
+  always an attachment, and it is refused (403) when `perms.save.download` is
+  false.
+- **Desktop opens only allowlisted extensions** (`electron/app/main.js:619`):
+  pdf, docx/doc, odt, rtf, txt, md, xlsx/xls, ods, csv, tsv, json, xml, sav,
+  omv, pptx/ppt, odp, common images, zip. Anything else, `.gz` included, is
+  saved to a temp dir and shown in the file manager instead of opened.
+- **Guard the button yourself.** The server sets Action options back to false
+  after a completed run (`analysis.py:197`), and since 28.4 also when an
+  `.omv` is opened (`analyses.py:145`), so a crafted file cannot fire an
+  action. But SNPstats saw its `action: open` option stay TRUE across later
+  runs on 28.1, and this has not been re-checked on 28.4. Keep a once-only
+  guard, such as a hidden table cell that restores across runs (SNPstats
+  `openNewState`), or every option click may re-export.
+- Don't declare an `Action` item in the `.r.yaml` to get at it. The schema
+  requires `operation`, and `jmvcore::Action$new()` has no such argument, so
+  `.init()` fails with "unused argument" (unchanged in 28.4). `perform()`
+  creates the item it needs.
+
 ## A module cannot register a file format
 
 Readers are Python plugins discovered by scanning the server's *own* package
@@ -209,5 +338,7 @@ a multi-file *merge-append* open. Each selected file is read with the ordinary
 `instancemodel.py:495-586`). It accepts exactly the formats Open accepts, and a
 module cannot add to them.
 
-So: to bring a new format into jamovi, write an **analysis** that reads bytes
-from the browser and emits output columns. That is the whole design space.
+So: to bring a new format into jamovi, write an **analysis** that takes the file
+through a `File` option (or reads bytes in the browser) and either emits output
+columns or opens the result as a new data set (`action: open`). That is the
+whole design space.
