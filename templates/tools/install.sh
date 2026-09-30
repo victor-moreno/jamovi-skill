@@ -18,9 +18,11 @@ CONTAINER="${2:-jamovi}"
 ARTIFACT="$MODULE_DIR/${MODULE}_${VERSION}.jmo"
 SMOKE="$ROOT/tools/smoke.R"
 
-# R preamble for the smoke test: jamovi's base library and the installed module first
+# R preamble for the smoke test: jamovi's base library, the installed module and
+# jmv's library first, as jamovi's engine sets them up (jmc does not bundle
+# packages jmv already ships, e.g. car, so a module importing one needs jmv's).
 smoke_preamble() {
-  printf '.libPaths(c("%s", "%s", .libPaths()))\n' "$1" "$2"
+  printf '.libPaths(c("%s", "%s", "%s", .libPaths()))\n' "$1" "$2" "$(dirname "$(dirname "$1")")/jmv/R"
   printf 'suppressPackageStartupMessages(library("%s", character.only = TRUE))\n' "$MODULE"
 }
 
