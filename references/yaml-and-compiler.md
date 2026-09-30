@@ -119,7 +119,10 @@ self$results$insert(1, notice)
 reach it with `self$results$get("violation")`.
 
 If you cannot use a Notice, use `type: Html` and let the platform pick the
-colour: **never hardcode one**, it is unreadable in the dark theme.
+colour: **never hardcode one**. jamovi has no dark theme as of 28.4 (checked:
+no `prefers-color-scheme` or Electron `nativeTheme` in the source, and the `theme`
+setting only picks the plot style), but a hardcoded colour assumes a white page
+forever, and OS high-contrast mode overrides it anyway.
 
 `type: State` has a broken constructor upstream; element-attached state
 (`element$setState()`) is the mechanism you actually want, and is unrelated.

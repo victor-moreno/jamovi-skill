@@ -194,7 +194,9 @@ will cross-read each other's cache. Create the environment in `initialize()`.
 - `theme$fill` / `theme$color` are the palette as plain vectors, for when you
   want jamovi's colours but your own scale.
 - **`geom_text` ignores the theme.** Its default colour is a hardcoded black, so
-  an annotation is black-on-dark under the dark theme however good `ggtheme` is.
+  an annotation is black-on-dark under any dark theme however good `ggtheme`
+  is. jamovi's own plot themes are all light, but a tutorial site's dark
+  rendering is not.
   Take the theme's own text colour:
   `ggplot2::calc_element("text", theme_only(ggtheme))$colour`.
 - Sizing belongs in `.init()`. Setting `image$setSize()` only inside the render

@@ -36,7 +36,7 @@ against the jamovi 28.4 source.
 - [ ] `type: Notice` in `.r.yaml` **does not compile**; build `jmvcore::Notice$new()` and `results$insert()`.
 - [ ] `type: Notification` compiles and then dies at runtime with "attempt to apply non-function".
 - [ ] A dynamically inserted element has no `self$results$<name>` binding — reach it with `$get("name")`.
-- [ ] Status messages never hardcode a colour; the dark theme makes it unreadable.
+- [ ] Status messages and panel JS never hardcode a colour. jamovi (to 28.4) has no dark theme (its `theme` setting only styles plots), but a hex grey assumes a white page, and OS high-contrast mode overrides colours anyway. Use platform elements (Notice, native `disabled`) or translucent greys, `rgba(128, 128, 128, a)`.
 
 ## Data in and out
 

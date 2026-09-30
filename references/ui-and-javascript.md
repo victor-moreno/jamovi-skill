@@ -89,8 +89,8 @@ exposes the bytes. Shape:
 
 1. A visible, **disabled** TextBox bound to a `filename` String option — a
    passive readout, not an input. Use the native `disabled` attribute rather than
-   hand-styled grey, so the platform greys it and it stays legible in the dark
-   theme. Re-assert it on every `view_updated`.
+   hand-styled grey, so the platform greys it (and high-contrast mode can
+   restyle it). Re-assert it on every `view_updated`.
 2. A button injected next to that input, guarded so it is injected once:
    `if ($input.prev('.my-browse-btn').length === 0) { … }`. Test on the side you
    actually inserted — getting `prev`/`next` backwards re-injects a button on
@@ -130,8 +130,12 @@ that needs re-selecting (`client/analysisui/fileselector.ts`). These are
 internals, not an API; SNPstats' `jamovi/js/snpPGS.js` does it to put the
 file name beside the button. The control rebuilds its list on every value
 change, so inline styles on the items are lost. Instead, add a class to `body`
-on `view_loaded`/`view_updated` and style through injected CSS rules. Take
-colours from the theme, not literals.
+on `view_loaded`/`view_updated` and style through injected CSS rules. jamovi
+has no colour variables to take colours from (and no dark theme as of 28.4).
+Use translucent greys, `rgba(128, 128, 128, a)`: with `a = (255 - hex)/127`
+they render exactly as the hex grey on the white panel, and they still work
+on any darker background. Give injected buttons `color: inherit`. SNPstats
+1.2.1 does this.
 
 ## Debugging
 
