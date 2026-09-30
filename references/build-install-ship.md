@@ -37,7 +37,12 @@ and a module compiled by one side does not work on the other. jamovi 2.x
 - the `current` series of `build-jmo.sh` stamps whatever the app says, so
   build only after the app update;
 - the docker image (`jamovi/jamovi:<series>`) carries its own matching `jmc`,
-  so `install.sh docker` is unaffected once the image is rebuilt.
+  so `install.sh docker` is unaffected once the image is rebuilt;
+- to regenerate the committed files (`.h.R`, `00jmv.R`, `0000.yaml`) without
+  that app, `jmc --prepare <dir> --assume-app-version 28.4.0` skips the check
+  (`index.js:175-179`). It still compares against `minApp`. Used for SNPstats
+  1.2.1 with jamovi-src's own compiler. `--build`/`--install` need the real
+  app, because they run its R.
 
 ## Things that fail silently at build time
 
