@@ -78,6 +78,9 @@ against the jamovi 28.4 source.
 - [ ] `jmvtools::install()` prints errors on stdout and exits 0 — verify the installed directory.
 - [ ] A sandboxed install into `jamovi.app` prints `Module installed successfully` having done nothing.
 - [ ] jamovi swaps in a reinstalled module a moment *after* `jmvtools::install()` returns: test the installed copy only once its `DESCRIPTION` `Built:` stamp has changed, or you test the old one (`templates/tools/install.sh` waits for it).
+- [ ] jmc installs and bundles every `Suggests:` package (with its dependencies) into the `.jmo`. Test oracles with native code (rms → polspline, pROC) turn a pure-R module per-CPU, and `prepare-jmo.sh` then refuses the repack. Keep oracles out of `Suggests`, guard their tests with `skip_if_not_installed()`, and clear `build/` (clinpred 0.1.0, jamovi-src compiler 107d4000).
+- [ ] An optional single `Variable` option needs `default: null`, or the generated R wrapper gets a bare formal and headless calls fail with `argument "x" is missing` (clinpred `splitVar`).
+- [ ] YAML anchors and aliases (`clearWith: &model [...]`, then `clearWith: *model`) compile in `.r.yaml` and expand in the `.h.R` (jamovi-src compiler 107d4000) — handy for long shared `clearWith` lists.
 - [ ] `.h.R` / `00jmv.R` / `0000.yaml` are generated; regenerate in CI and fail on a dirty tree.
 - [ ] A `Level` option must not carry a `default`, and the generated formal then needs patching to `= NULL`.
 - [ ] `00refs.yaml` needs its top-level `refs:` key; without it references vanish and nothing looks wrong.
