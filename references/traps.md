@@ -31,6 +31,7 @@ against the jamovi 28.4 source.
 - [ ] `geom_text` colour does not follow the theme — take it from `calc_element("text", ...)`.
 - [ ] Nor does its **size**: jamovi's theme text is 16 pt (axis text 12.8), so `annotate("text", size = 3.5)` (about 10 pt) comes out at 60 % of the axis text. Size it from the theme: `rel * calc_element("text", theme)$size / ggplot2::.pt`.
 - [ ] A 550 px plot has no room for two legends side by side at 16 pt: the top legend overflows and is cut at both edges. Stack them (`legend.box = "vertical"`) or shorten the labels.
+- [ ] Leading text columns titled `''` (or with `combineBelow`) are drawn as row headings: jamovi spans a heading cell over the blank (`""`) cells below it, but in a column **without** `combineBelow` it still draws those blank cells, so the row shifts one column right (`client/resultsview/table.ts:779-790`). Give every heading cell a value (an unset cell shows "."). Headless `asDF` looks right.
 - [ ] Run-phase notes are set with `init = FALSE`, and stale placeholder keys are re-declared in `.init()`.
 - [ ] Cached state stays well under **500 000 compressed bytes** (`jmvcore/R/results.R:223`).
 - [ ] `type: Notice` in `.r.yaml` **does not compile**; build `jmvcore::Notice$new()` and `results$insert()`.
@@ -41,6 +42,7 @@ against the jamovi 28.4 source.
 ## Data in and out
 
 - [ ] `weightsSupport` is declared, not inherited: the fallback is `none` with an `Output` option and `auto` without, and `auto` replicates rows so `nrow(self$data)` is the sum of the weights.
+- [ ] In jamovi `.init()` sees only the data **header** (0 rows): `levels(factor(self$data[[v]]))` is empty, because `factor()` drops the levels of an empty factor. Use `levels(self$data[[v]])`. Headless tests pass full data and never see it — construct one with `data = d[0, ]` and call `init()`.
 - [ ] Convert types (`jmvcore::toNumeric`, `as.factor`) **before** `na.omit()`/`subset()` — they strip jamovi's attributes.
 - [ ] An **ordinal** variable arrives as an **ordered factor** (`engine/readdf.cpp:263`), and `as.factor()` keeps it ordered, so `coxph`/`glm`/`lm` code it with polynomial contrasts (`.L`, `.Q`) instead of level-versus-reference: use `factor(x, ordered = FALSE)` before modelling. Headless tests with plain factors never see it.
 - [ ] Output columns: `setRowNums(rownames(data))`, never `1:nrow(data)` — silently wrong under any filter.
@@ -57,12 +59,17 @@ against the jamovi 28.4 source.
 - [ ] Guard an `Action`'s `perform()` so it runs once per click; SNPstats saw the option stay TRUE across later runs.
 - [ ] Options cross a **1 MiB** hop and results a **4 MiB** hop; both drop silently. Enforce the limit in the browser.
 - [ ] `NA` in a nominal output column costs **10 bytes**, not 1 — budget for the missing rate.
+- [ ] `self$options$x` **errors** ("options$x does not exist") for an option the analysis does not define; code shared between analyses reaches optional ones through `self$options$has("x")`.
+- [ ] R6 private methods shared between analyses as a list (`private = modifyList(shared, overrides)`): `modifyList` drops entries whose value is `NULL`, and R6 then refuses to add that field later (locked environment) — default class-specific fields to `NA`.
+- [ ] In jamovi cloud the `File` control's Browse… opens the **browser's** file chooser; script it with Playwright `page.expect_file_chooser()` + `set_files()`.
 - [ ] Splitting a payload across several options buys nothing: the full options object is re-sent every time.
 - [ ] Data Library entries (`datasets:` in `0000.yaml`) have a fixed height: a description over about 150 characters (two lines) runs over the next entry.
 
 ## UI and JavaScript
 
 - [ ] `jus: '3.0'` in `.u.yaml`, or none of the handlers load.
+- [ ] Under `jus: '3.0'` the jus 2.0 events API (an `events:` block naming `./x.events::fn`, and `context.valuesToItems` / `cloneArray`) throws "valuesToItems is not a function" on every change, and the options **never reach the engine**: the analysis shows its `.init()` output forever, with no error in the results or the server log. Use named handlers and the global `utils` (`utils.clone`, `utils.valuesToItems`, `this.findChanges`), as jmv's `anova.js`. Catch it with Playwright `page.on("pageerror")`.
+- [ ] Several analyses can share one handler object: `<basename>.js` = `module.exports = require('./shared')` (browserify bundles it per analysis).
 - [ ] `compilerMode: tame`, or the compiler rewrites your hand-built panel on every install.
 - [ ] In `tame` mode the compiler still **appends** a control for every new option, including hidden ones.
 - [ ] Handler names are `{optionName}_{eventName}`; `view_loaded` fires once per panel type, not per analysis.
