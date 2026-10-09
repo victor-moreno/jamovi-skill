@@ -34,11 +34,13 @@ and the selector notes; this page is the workflow for a module.
 
 ## A capture container for the module
 
-Use a container of your own, on its own ports, rather than one another project
-uses: recreating a container to change its language drops the modules installed
-into it, and its server language is shared by every client.
+Use a container of your own rather than one another project uses: recreating a
+container to change its language drops the modules installed into it, and its
+server language is shared by every client. Keep the default port 41337 (the user
+connects there to test alongside) and run one jamovi container at a time:
+`docker stop` the others first.
 
-    export JAMOVI_CONTAINER=jamovi-capture JAMOVI_PORT=41437
+    export JAMOVI_CONTAINER=jamovi-capture
     JAMOVI_DOCS_DIR=.tmp/jamovi-capture/docs bash ../jamovi-automation/jamovi_container.sh en
     bash tools/install.sh docker jamovi-capture      # jmc --install + tools/smoke.R
 
