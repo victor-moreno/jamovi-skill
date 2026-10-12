@@ -44,6 +44,32 @@ tutorial/_quarto.yml  _common.R  references.bib  index.qmd  <section>/<page>.qmd
   changes. A change to the module's `R/` code is invisible to it, so after
   changing the compute, run `rm -rf _freeze && quarto render`.
 
+## Collapsible side panels
+
+Every tutorial ships `templates/tutorial/collapse.html` (from the studysim
+tutorial, 2026-10-12): on screens ≥ 992 px, a button at each edge hides the left
+contents sidebar or the right "On this page" TOC, and the text widens into the
+freed grid columns. The choice is kept in `localStorage` (key `tutorial-panels`,
+so it is shared by all tutorials served from the same GitHub Pages origin). It
+also colours the buttons and the sidebar title in the cosmo/darkly blue.
+
+    cp <skill>/templates/tutorial/collapse.html tutorial/
+
+```yaml
+format:
+  html:
+    css: styles.css
+    include-after-body: collapse.html
+```
+
+- Copy the file, do not edit it per module; after a template change, copy it
+  again into every tutorial and re-render.
+- Works with or without a navbar: it only acts on `#quarto-sidebar`,
+  `#quarto-margin-sidebar` and `main.content`, and adds no button when a page
+  has no such panel.
+- An `include-after-body` change does not invalidate `_freeze`: a plain
+  `quarto render` picks it up, no need to wipe the cache.
+
 ## Running Quarto in a sandbox
 
 On macOS Quarto keeps its cache in `$HOME/Library/Caches/quarto`. In a sandbox

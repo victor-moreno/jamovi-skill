@@ -1,0 +1,55 @@
+<!-- Collapsible left (contents) and right (on this page) panels on wide
+     screens: a button at each edge, ‹ hides a panel and › brings it back; the
+     text widens into the space; the choice is remembered between pages.
+     Copied from jamovi-skill/templates/tutorial/collapse.html; included with
+     format: html: include-after-body: collapse.html in _quarto.yml. -->
+<style>
+.panel-toggle {
+  position: fixed; top: 50%; transform: translateY(-50%); z-index: 1100;
+  width: 22px; height: 46px; padding: 0; font-size: 20px; line-height: 1;
+  border: 1px solid var(--bs-border-color, #ccc); border-radius: 6px;
+  background: var(--bs-body-bg, #fff); color: var(--bs-body-color, #333);
+  opacity: 0.7; cursor: pointer;
+}
+.panel-toggle:hover { opacity: 1; }
+/* blue, for visibility: the edge buttons and the site title in the contents */
+.panel-toggle { color: #2780e3; border-color: #2780e3; font-weight: bold; opacity: 0.85; }
+.sidebar-title, .sidebar-title a { color: #2780e3 !important; }
+body.quarto-dark .panel-toggle { color: #6aa9f0; border-color: #6aa9f0; }
+body.quarto-dark .sidebar-title, body.quarto-dark .sidebar-title a { color: #6aa9f0 !important; }
+#panel-toggle-left { left: 2px; }
+#panel-toggle-right { right: 2px; }
+@media (max-width: 991.98px) { .panel-toggle { display: none; } }
+@media (min-width: 992px) {
+  body.panel-left-off #quarto-sidebar { display: none !important; }
+  body.panel-right-off #quarto-margin-sidebar { display: none !important; }
+  body.panel-left-off main.content { grid-column-start: page-start !important; }
+  body.panel-right-off main.content { grid-column-end: page-end !important; }
+}
+</style>
+<script>
+(function () {
+  var KEY = "tutorial-panels";
+  var state = { left: true, right: true };
+  try { var s = JSON.parse(localStorage.getItem(KEY)); if (s) state = s; } catch (e) {}
+  function apply() {
+    document.body.classList.toggle("panel-left-off", !state.left);
+    document.body.classList.toggle("panel-right-off", !state.right);
+    var l = document.getElementById("panel-toggle-left"), r = document.getElementById("panel-toggle-right");
+    if (l) { l.textContent = state.left ? "‹" : "›"; l.title = state.left ? "Hide the contents" : "Show the contents"; }
+    if (r) { r.textContent = state.right ? "›" : "‹"; r.title = state.right ? "Hide 'On this page'" : "Show 'On this page'"; }
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  }
+  function button(id, side) {
+    var b = document.createElement("button");
+    b.type = "button"; b.id = id; b.className = "panel-toggle";
+    b.addEventListener("click", function () { state[side] = !state[side]; apply(); });
+    document.body.appendChild(b);
+  }
+  document.addEventListener("DOMContentLoaded", function () {
+    if (document.getElementById("quarto-sidebar")) button("panel-toggle-left", "left");
+    if (document.getElementById("quarto-margin-sidebar")) button("panel-toggle-right", "right");
+    apply();
+  });
+})();
+</script>

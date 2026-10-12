@@ -38,6 +38,7 @@ scripts/add-tools.sh                  copy templates/tools/ into a module
 scripts/docker-setup.sh               jamovi-src for Docker: image tag + a volume
                                       that keeps modules and settings
 templates/tools/                      build-jmo, prepare-jmo, install, release, smoke.R
+templates/tutorial/collapse.html      collapsible side panels for Quarto tutorials
 ```
 
 ## Using it
